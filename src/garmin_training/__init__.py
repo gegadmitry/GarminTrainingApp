@@ -1,0 +1,1 @@
+"""Local Garmin Training application package."""
