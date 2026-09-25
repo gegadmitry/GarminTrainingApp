@@ -3,3 +3,7 @@
 !.env.example
 .garminconnect/
 data/
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+*.egg-info/
