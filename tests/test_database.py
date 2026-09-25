@@ -19,7 +19,11 @@ class DatabaseMigrationTests(unittest.TestCase):
             connection = connect(database_path)
             self.assertEqual(first_tables, self._table_names(connection))
             self.assertEqual(
-                [("001_initial.sql",), ("002_validation_messages.sql",)],
+                [
+                    ("001_initial.sql",),
+                    ("002_validation_messages.sql",),
+                    ("003_weekly_reports.sql",),
+                ],
                 connection.execute("SELECT version FROM schema_migrations").fetchall(),
             )
             connection.close()
