@@ -1,0 +1,1 @@
+ALTER TABLE activities ADD COLUMN validation_messages TEXT NOT NULL DEFAULT '';
