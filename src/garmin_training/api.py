@@ -41,6 +41,20 @@ class ActivityResponse(BaseModel):
     data_quality_status: str
 
 
+class ActivityDetailResponse(ActivityResponse):
+    model_config = ConfigDict(extra="forbid")
+
+    calories: float | None
+    average_heart_rate: int | None
+    max_heart_rate: int | None
+    elevation_gain_meters: float | None
+    validation_messages: str
+    provenance_source: str | None
+    parser_version: str | None
+    raw_file_path: str | None
+    raw_file_hash: str | None
+
+
 def create_app(database_path: str | Path | None = None) -> FastAPI:
     configured_path = Path(database_path or os.environ.get("GARMIN_DATABASE_PATH", "data/training.sqlite3"))
     application = FastAPI(title="Garmin Training API", version="0.1.0")
@@ -96,6 +110,25 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
         rows = connection.execute(query, parameters).fetchall()
         connection.close()
         return [ActivityResponse(**dict(zip(ActivityResponse.model_fields, row))) for row in rows]
+
+    @application.get("/activities/{activity_id}", response_model=ActivityDetailResponse)
+    def activity_detail(activity_id: int) -> ActivityDetailResponse:
+        connection = connect(configured_path)
+        row = connection.execute(
+            "SELECT a.id, a.garmin_activity_id, a.sport, a.start_time_utc, "
+            "a.duration_seconds, a.distance_meters, a.data_quality_status, "
+            "a.calories, a.average_heart_rate, a.max_heart_rate, "
+            "a.elevation_gain_meters, a.validation_messages, p.source, "
+            "p.parser_version, p.raw_file_path, p.raw_file_hash "
+            "FROM activities AS a LEFT JOIN activity_provenance AS p "
+            "ON p.activity_id = a.id WHERE a.id = ?",
+            (activity_id,),
+        ).fetchone()
+        connection.close()
+        if row is None:
+            raise HTTPException(status_code=404, detail="activity not found")
+        values = dict(zip(ActivityDetailResponse.model_fields, row))
+        return ActivityDetailResponse(**values)
 
     return application
 
